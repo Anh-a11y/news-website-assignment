@@ -441,28 +441,49 @@
 
   // Chỉ hiển thị ảnh thật của bài viết.
   // Không có URL ảnh hoặc ảnh tải lỗi thì ẩn phần tử ảnh.
-  function createImage(post) {
-    const originalImage = normalizeImageUrl(
-      post.image || post.imageUrl
+ 
+function createImage(post) {
+  const originalImage = normalizeImageUrl(
+    post.image || post.imageUrl
+  );
+
+  if (!originalImage) return null;
+
+  let displayUrl;
+
+  try {
+    const imageUrl = new URL(
+      originalImage,
+      window.location.href
     );
 
-    if (!originalImage) {
-      return null;
+    if (
+      imageUrl.hostname.toLowerCase() ===
+      "cdnphoto.dantri.com.vn"
+    ) {
+      displayUrl =
+        `/api/image?url=${encodeURIComponent(imageUrl.href)}` +
+        `&referer=${encodeURIComponent(
+          post.url || "https://dantri.com.vn/"
+        )}`;
+    } else {
+      displayUrl = imageUrl.href;
     }
-
-    const image = document.createElement("img");
-
-    image.className = "post-image";
-    image.alt = post.title || "Ảnh bài viết";
-    image.loading = "lazy";
-    image.src = originalImage;
-
-    image.onerror = () => {
-      image.remove();
-    };
-
-    return image;
+  } catch (_) {
+    return null;
   }
+
+  const image = document.createElement("img");
+  image.className = "post-image";
+  image.alt = post.title || "Ảnh bài viết";
+  image.loading = "lazy";
+  image.src = displayUrl;
+
+  image.onerror = () => image.remove();
+
+  return image;
+}
+
 
   function createPostCard(post, variant = "list") {
     const article = document.createElement("article");

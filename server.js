@@ -46,8 +46,143 @@ async function proxyFetch(reqUrl, res) {
   } finally { clearTimeout(timer); }
 }
 
+async function proxyImage(reqUrl, res) {
+  const raw = reqUrl.searchParams.get("url");
+
+  if (!raw) {
+    return send(
+      res,
+      400,
+      JSON.stringify({ error: "Thiếu URL ảnh." }),
+      "application/json; charset=utf-8"
+    );
+  }
+
+  let target;
+
+  try {
+    target = new URL(raw);
+  } catch (_) {
+    return send(
+      res,
+      400,
+      JSON.stringify({ error: "URL ảnh không hợp lệ." }),
+      "application/json; charset=utf-8"
+    );
+  }
+
+  // Chỉ cho phép lấy ảnh từ CDN Dân trí.
+  if (
+    target.protocol !== "https:" ||
+    target.hostname.toLowerCase() !== "cdnphoto.dantri.com.vn"
+  ) {
+    return send(
+      res,
+      400,
+      JSON.stringify({ error: "Tên miền ảnh không được phép." }),
+      "application/json; charset=utf-8"
+    );
+  }
+
+  let referer = "https://dantri.com.vn/";
+  const rawReferer = reqUrl.searchParams.get("referer");
+
+  if (rawReferer) {
+    try {
+      const page = new URL(rawReferer);
+
+      if (
+        /^https?:$/.test(page.protocol) &&
+        allowed(page.hostname.toLowerCase())
+      ) {
+        referer = page.href;
+      }
+    } catch (_) {
+      // Sử dụng Referer mặc định nếu URL bài báo không hợp lệ.
+    }
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 18000);
+
+  try {
+    const upstream = await fetch(target.href, {
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132 Safari/537.36",
+        "Referer": referer,
+        "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7"
+      }
+    });
+
+    if (
+      new URL(upstream.url).hostname.toLowerCase() !==
+      "cdnphoto.dantri.com.vn"
+    ) {
+      return send(
+        res,
+        502,
+        JSON.stringify({ error: "CDN chuyển hướng sang tên miền khác." }),
+        "application/json; charset=utf-8"
+      );
+    }
+
+    if (!upstream.ok) {
+      console.error("Lỗi tải ảnh Dân trí:", upstream.status);
+
+      return send(
+        res,
+        502,
+        JSON.stringify({
+          error: `CDN Dân trí trả về HTTP ${upstream.status}.`
+        }),
+        "application/json; charset=utf-8"
+      );
+    }
+
+    const contentType = upstream.headers.get("content-type") || "";
+
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      return send(
+        res,
+        415,
+        JSON.stringify({ error: "Nguồn không trả về dữ liệu ảnh." }),
+        "application/json; charset=utf-8"
+      );
+    }
+
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+
+    res.writeHead(200, {
+      "Content-Type": contentType,
+      "Content-Length": buffer.length,
+      "Cache-Control": "public, max-age=3600",
+      "X-Content-Type-Options": "nosniff"
+    });
+
+    res.end(buffer);
+  } catch (error) {
+    console.error("Không tải được ảnh:", error.message);
+
+    if (!res.headersSent) {
+      send(
+        res,
+        502,
+        JSON.stringify({ error: "Không tải được ảnh từ CDN Dân trí." }),
+        "application/json; charset=utf-8"
+      );
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+  if (requestUrl.pathname === "/api/image") return proxyImage(requestUrl, res);
   if (requestUrl.pathname === "/api/fetch") return proxyFetch(requestUrl, res);
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed");
   let pathname;
