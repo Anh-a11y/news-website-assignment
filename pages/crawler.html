@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Crawler tin tức - Tin Tức 24H</title><link rel="stylesheet" href="../css/style.css"></head>
+<body>
+  <header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark">24</span><span><strong>TIN TỨC 24H</strong><small>Crawler dữ liệu bài viết</small></span></a><a class="crawler-link" href="../index.html">← Trang chủ</a></div></header>
+  <nav class="navbar"><div class="nav-inner"><a class="nav-link" href="../index.html">Trang chủ</a><a class="nav-link active" href="crawler.html">Crawler tin tức</a></div></nav>
+  <main class="crawler-container">
+    <section class="crawler-panel">
+      <h1>Crawler tin tức Dân Trí</h1>
+      <p class="help-text">Nhập URL bài báo để trích xuất dữ liệu chuẩn hóa. Bạn cũng có thể nhập URL trang chuyên mục để tìm và thu thập tối đa 10 bài viết đầu tiên.</p>
+      <div class="tip-box">Crawler cần chạy qua máy chủ Node.js cục bộ để tránh lỗi CORS của trình duyệt. Nếu Dân Trí chặn yêu cầu tự động, trang sẽ báo lỗi để bạn biết; không tự tạo nội dung giả thay cho bài báo gốc.</div>
+      <label class="field-label" for="url-input">URL bài viết hoặc trang chuyên mục</label>
+      <input id="url-input" class="form-control" type="url" placeholder="https://dantri.com.vn/the-gioi.htm" value="">
+      <div class="button-row"><button id="crawl-one" class="primary-button" type="button">Crawl 1 bài viết</button><button id="crawl-category" class="secondary-button" type="button">Crawl tối đa 10 bài từ chuyên mục</button></div>
+      <div id="status" class="status-message" role="status">Sẵn sàng. Hãy nhập URL từ dantri.com.vn.</div>
+    </section>
+    <section class="crawler-panel">
+      <h2>Kết quả chuẩn hóa JSON</h2>
+      <p class="help-text">Sau khi crawl thành công, kết quả sẽ hiển thị ở đây. Nút lưu sẽ thêm bài vào LocalStorage để trang chủ dùng ngay.</p>
+      <div class="button-row"><button id="save-results" class="primary-button" type="button" disabled>Lưu bài vào LocalStorage</button><button id="download-json" class="secondary-button" type="button" disabled>Tải JSON</button><button id="clear-results" class="secondary-button" type="button">Xóa kết quả hiện tại</button><button id="remove-samples" class="secondary-button" type="button">Xóa bài mẫu khỏi LocalStorage</button></div>
+      <pre id="json-preview" class="json-preview">Chưa có kết quả.</pre>
+      <div id="results-list" class="result-list"></div>
+    </section>
+    <section class="crawler-panel">
+      <h2>Trường dữ liệu được trích xuất</h2>
+      <p><strong>id, title, slug, excerpt, content, author, category, publishedAt, source, url, image.</strong></p>
+      <p class="help-text">Theo cấu trúc JSON mẫu trong đề, trường author và category được chuẩn hóa thành chuỗi. Dữ liệu menu phân cấp nằm ở file <code>categories.json</code>; bài đã lưu được giữ ở LocalStorage với khóa <code>news_posts_v1</code>.</p>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="footer-grid"><div><a class="footer-brand" href="../index.html">TIN TỨC 24H</a><p>Website tin tức thực hành bằng HTML, CSS và JavaScript.</p></div><div><h2>Liên kết</h2><a href="../index.html">Trang chủ</a><a href="crawler.html">Crawler tin tức</a></div><div><h2>Liên hệ</h2><p>Email: contact@example.com</p></div><div><h2>Mạng xã hội</h2><div class="social-links"><a href="https://www.facebook.com/" aria-label="Facebook">f</a><a href="https://www.youtube.com/" aria-label="YouTube">▶</a><a href="https://www.tiktok.com/" aria-label="TikTok">♪</a></div></div></div><div class="copyright">© 2026 Tin Tức 24H</div></footer>
+  <script src="../js/crawler.js"></script>
+</body></html>

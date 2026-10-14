@@ -1,0 +1,14 @@
+
+{
+  "name": "tin-tuc-24h",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Website tin tức 24H",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
