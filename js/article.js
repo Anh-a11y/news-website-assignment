@@ -88,13 +88,28 @@
       ? date.toLocaleString("vi-VN") : "Chưa rõ thời gian";
     container.appendChild(make("p", "article-meta", `${post.author} · ${dateText}`));
 
-    if (post.image) {
-      const image = make("img", "article-image");
-      image.src = post.image;
-      image.alt = post.title;
-      image.onerror = () => image.remove();
-      container.appendChild(image);
-    }
+    
+const fallbackImage =
+  "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80";
+
+const originalImage = post.image || "";
+const image = make("img", "article-image");
+
+image.src = originalImage || fallbackImage;
+image.alt = post.title || "Ảnh minh họa bài viết";
+
+image.onerror = () => {
+  if (!originalImage || image.dataset.fallbackTried === "true") {
+    image.remove();
+    return;
+  }
+
+  image.dataset.fallbackTried = "true";
+  image.src = fallbackImage;
+};
+
+container.appendChild(image);
+
 
     if (post.excerpt) container.appendChild(make("p", "article-lead", post.excerpt));
     container.appendChild(make("div", "article-body", post.content));
