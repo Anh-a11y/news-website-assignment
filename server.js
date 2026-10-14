@@ -63,6 +63,8 @@ const server = http.createServer(async (req, res) => {
     fs.createReadStream(filePath).pipe(res);
   });
 });
+server.keepAliveTimeout = 120000;
+server.headersTimeout = 125000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Tin Tức 24H đang chạy tại port ${PORT}`);
   console.log("Nhấn Ctrl+C để dừng máy chủ.");
