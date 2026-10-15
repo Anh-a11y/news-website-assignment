@@ -89,26 +89,50 @@
     container.appendChild(make("p", "article-meta", `${post.author} · ${dateText}`));
 
     
-const fallbackImage =
-  "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80";
 
-const originalImage = post.image || "";
-const image = make("img", "article-image");
+const originalImage = String(
+  post.image || post.imageUrl || ""
+).trim();
 
-image.src = originalImage || fallbackImage;
-image.alt = post.title || "Ảnh minh họa bài viết";
+if (originalImage) {
+  let displayImageUrl = "";
 
-image.onerror = () => {
-  if (!originalImage || image.dataset.fallbackTried === "true") {
-    image.remove();
-    return;
+  try {
+    const imageUrl = new URL(
+      originalImage,
+      window.location.href
+    );
+
+    if (
+      imageUrl.hostname.toLowerCase() ===
+      "cdnphoto.dantri.com.vn"
+    ) {
+      displayImageUrl =
+        `/api/image?url=${encodeURIComponent(imageUrl.href)}` +
+        `&referer=${encodeURIComponent(
+          post.url || "https://dantri.com.vn/"
+        )}`;
+    } else {
+      displayImageUrl = imageUrl.href;
+    }
+  } catch (error) {
+    console.warn("URL ảnh không hợp lệ:", originalImage);
   }
 
-  image.dataset.fallbackTried = "true";
-  image.src = fallbackImage;
-};
+  if (displayImageUrl) {
+    const image = make("img", "article-image");
 
-container.appendChild(image);
+    image.src = displayImageUrl;
+    image.alt = post.title || "Ảnh bài viết";
+
+    image.onerror = () => {
+      image.remove();
+    };
+
+    container.appendChild(image);
+  }
+}
+
 
 
     if (post.excerpt) container.appendChild(make("p", "article-lead", post.excerpt));
