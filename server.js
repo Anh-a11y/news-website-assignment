@@ -180,10 +180,117 @@ async function proxyImage(reqUrl, res) {
   }
 }
 
-const server = http.createServer(async (req, res) => {
+
+async function proxyImage(req, requestUrl, res) {
+    const origin = req.headers.origin || "";
+
+    if (!isAllowedOrigin(origin)) {
+        return sendApi(req, res, 403, JSON.stringify({
+            error: "Origin chưa được phép."
+        }));
+    }
+
+    if (req.method === "OPTIONS") {
+        return sendApi(req, res, 204, "");
+    }
+
+    if (req.method !== "GET") {
+        return sendApi(req, res, 405, JSON.stringify({
+            error: "Chỉ hỗ trợ GET."
+        }));
+    }
+
+    let target;
+
+    try {
+        target = new URL(requestUrl.searchParams.get("url") || "");
+    } catch (_) {
+        return sendApi(req, res, 400, JSON.stringify({
+            error: "URL ảnh không hợp lệ."
+        }));
+    }
+
+    if (
+        target.protocol !== "https:" ||
+        target.hostname !== "cdnphoto.dantri.com.vn"
+    ) {
+        return sendApi(req, res, 400, JSON.stringify({
+            error: "Chỉ hỗ trợ ảnh từ CDN Dân Trí."
+        }));
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+
+    try {
+        const upstream = await fetch(target.href, {
+            signal: controller.signal,
+            redirect: "follow",
+            headers: {
+                "User-Agent": "Mozilla/5.0",
+                "Referer": "https://dantri.com.vn/",
+                "Accept": "image/avif,image/webp,image/*,*/*;q=0.8"
+            }
+        });
+
+        if (!upstream.ok) {
+            return sendApi(req, res, upstream.status, JSON.stringify({
+                error: `Không tải được ảnh: HTTP ${upstream.status}.`
+            }));
+        }
+
+        const finalUrl = new URL(upstream.url);
+
+        if (finalUrl.hostname !== "cdnphoto.dantri.com.vn") {
+            return sendApi(req, res, 502, JSON.stringify({
+                error: "URL ảnh chuyển hướng không được hỗ trợ."
+            }));
+        }
+
+        const contentType = upstream.headers.get("content-type") || "";
+
+        if (!contentType.startsWith("image/")) {
+            return sendApi(req, res, 415, JSON.stringify({
+                error: "Nguồn không trả về dữ liệu ảnh."
+            }));
+        }
+
+        const bytes = Buffer.from(await upstream.arrayBuffer());
+
+        if (bytes.length > 8 * 1024 * 1024) {
+            return sendApi(req, res, 413, JSON.stringify({
+                error: "Ảnh vượt quá giới hạn 8 MB."
+            }));
+        }
+
+        return sendApi(
+            req,
+            res,
+            200,
+            bytes,
+            contentType,
+            { "Cache-Control": "public, max-age=3600" }
+        );
+    } catch (error) {
+        return sendApi(req, res, 502, JSON.stringify({
+            error: error.name === "AbortError"
+                ? "Tải ảnh quá thời gian."
+                : "Không thể tải ảnh từ Dân Trí."
+        }));
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
   const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   if (requestUrl.pathname === "/api/image") return proxyImage(requestUrl, res);
-  if (requestUrl.pathname === "/api/fetch") return proxyFetch(requestUrl, res);
+if (requestUrl.pathname === "/api/fetch") {
+    return proxyFetch(req, requestUrl, res);
+}
+
+if (requestUrl.pathname === "/api/image") {
+    return proxyImage(req, requestUrl, res);
+}
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed");
   let pathname;
   try { pathname = decodeURIComponent(requestUrl.pathname); } catch (_) { return send(res, 400, "Bad URL"); }
