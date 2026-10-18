@@ -6,6 +6,13 @@
   const POSTS_KEY = "news_posts_v1";
   const MENU_KEY = "news_menu_v1";
 
+  // GitHub Pages không chạy API Node.js; gửi yêu cầu ảnh về backend Render.
+  // Khi chạy localhost hoặc trên chính Render, dùng API cùng origin.
+  const API_BASE_URL =
+    window.location.hostname === "anh-a11y.github.io"
+      ? "https://news-website-githubpages-crawler.onrender.com"
+      : "";
+
   // Loại ảnh dự phòng dùng chung từ phiên bản cũ để tránh ảnh bị lặp.
   const OLD_FALLBACK_IMAGE_MARKER =
     "photo-1504711434969-e33886168f5c";
@@ -462,7 +469,7 @@ function createImage(post) {
       "cdnphoto.dantri.com.vn"
     ) {
       displayUrl =
-        `/api/image?url=${encodeURIComponent(imageUrl.href)}` +
+        `${API_BASE_URL}/api/image?url=${encodeURIComponent(imageUrl.href)}` +
         `&referer=${encodeURIComponent(
           post.url || "https://dantri.com.vn/"
         )}`;
