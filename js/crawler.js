@@ -25,7 +25,7 @@
   }
 
   async function fetchHtml(url) {
-    const endpoint = `/api/fetch?url=${encodeURIComponent(url)}`;
+    const endpoint = `https://news-website-githubpages-crawler.onrender.com/api/fetch?url=${encodeURIComponent(url)}`;
     const response = await fetch(endpoint, { headers: { "Accept": "text/html" } });
     const text = await response.text();
     if (!response.ok) {
